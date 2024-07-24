@@ -33,7 +33,7 @@ app.get('/api/users', (req, res) => {
 });
 
 // Ruta para agregar un nuevo usuario
-app.post('/api/users/new-user', (req, res) => {
+app.post('/api/users/new', (req, res) => {
   let { id, firstName, lastName } = req.body;
 
   // Verificar que todos los campos estén presentes
@@ -100,13 +100,6 @@ app.put('/api/users/:userId', (req, res) => {
     return res.status(400).json({ message: "ID de usuario invalido. Debe ser un número." });
   }
 
-  const { firstName, lastName } = req.body;
-
-  // Verificar que al menos uno de los campos a actualizar esté presente
-  if (!firstName && !lastName) {
-    return res.status(400).json({ message: "Debe proporcionar al menos uno de los campos para actualizar (firstName o lastName)." });
-  }
-
   const dataUsers = readUsersFromFile();
   const userIndex = dataUsers.findIndex((user) => user.id === pathUserId);
 
@@ -114,8 +107,15 @@ app.put('/api/users/:userId', (req, res) => {
     return res.status(404).json({ message: `No existe ningun usuario con el id: ${pathUserId}` });
   }
 
+  const { firstName, lastName } = req.body;
+
+  // Verificar que al menos uno de los campos a actualizar esté presente
+  if (!firstName && !lastName) {
+    return res.status(400).json({ message: "Debe proporcionar al menos uno de los campos para actualizar (firstName o lastName)." });
+  }
+
   let userUpdated = false; // Bandera para verificar si se realizaron cambios
-  let updateMessages = []; // Mensaje de respuesta
+  const updateMessages = {}; // Mensaje de respuesta
 
   // Validar y actualizar el nombre
   if (firstName) {
@@ -124,7 +124,7 @@ app.put('/api/users/:userId', (req, res) => {
     }
     if (dataUsers[userIndex].firstName !== firstName) {
       const firstNameAntiguo = dataUsers[userIndex].firstName;
-      updateMessages.push(`firstName: ${firstNameAntiguo} => ${firstName}`);
+      updateMessages.firstName = `${firstNameAntiguo} => ${firstName}`;
       dataUsers[userIndex].firstName = firstName;
       userUpdated = true; // Marcar que se realizaron cambios
     }
@@ -137,7 +137,7 @@ app.put('/api/users/:userId', (req, res) => {
     }
     if (dataUsers[userIndex].lastName !== lastName) {
       const lastNameAntiguo = dataUsers[userIndex].lastName;
-      updateMessages.push(`lastName: ${lastNameAntiguo} => ${lastName}`);
+      updateMessages.lastName = `${lastNameAntiguo} => ${lastName}`;
       dataUsers[userIndex].lastName = lastName;
       userUpdated = true; // Marcar que se realizaron cambios
     }
@@ -145,17 +145,39 @@ app.put('/api/users/:userId', (req, res) => {
 
   // Verificar si se realizaron cambios
   if (!userUpdated) {
-      return res.status(304).json({ message: "No se realizaron cambios." });
+    return res.status(304).json({ message: "No se realizaron cambios." });
   }
-  
+
   // Guardar los cambios en el archivo
   writeUsersToFile(dataUsers);
-  
+
   return res.status(200).json({ Modificaciones: updateMessages });
 });
 
+// Ruta para eliminar un usuario por ID
+app.delete('/api/users/:userId', (req, res) => {
+  const pathUserId = parseInt(req.params.userId, 10);
 
+  if (isNaN(pathUserId)) {
+    return res.status(400).json({ message: "ID de usuario invalido. Debe ser un número." });
+  }
 
+  const dataUsers = readUsersFromFile();
+  const userIndex = dataUsers.findIndex((user) => user.id === pathUserId);
+
+  if (userIndex === -1) {
+    return res.status(404).json({ message: `No existe ningun usuario con el id: ${pathUserId}` });
+  }
+
+  // Eliminar el usuario del array
+  const [deletedUser] = dataUsers.splice(userIndex, 1);
+
+  // Guardar los cambios en el archivo
+  writeUsersToFile(dataUsers);
+
+  // Devolver una respuesta adecuada
+  res.status(200).json({ message: `Usuario con id ${pathUserId} eliminado`, deletedUser });
+});
 
 // Ruta para manejar rutas no encontradas
 app.get('*', (req, res) => {
