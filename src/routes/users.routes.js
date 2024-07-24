@@ -1,7 +1,7 @@
 // Importas el Router, lo invocás, le agregas las rutas y luego lo exportas.
 import { Router } from 'express';
 
-import { getUsers, newUser, getUser, updateUser, deleteUser } from "../controllers/users.controller.js";
+import { getUsers, newUser, getUser, updateUser, deleteUser, uploadProfilePicture } from "../controllers/users.controller.js";
 
 const router = Router();
 
@@ -19,5 +19,9 @@ router.put('/users/:userId', updateUser);
 
 // Ruta para eliminar un usuario por ID
 router.delete('/users/:userId', deleteUser);
+
+
+// Rutas Foto de perfil
+router.post('/users/:userId/profilePicture', uploadProfilePicture);
 
 export default router;

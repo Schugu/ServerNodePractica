@@ -1,4 +1,5 @@
-import fs from 'node:fs';
+import fs from 'fs';
+import { upload } from "../libs/multer.js";
 
 
 const filePath = 'src/dataBase/users.json';
@@ -128,3 +129,46 @@ export const deleteUser = (req, res) => {
 
   res.status(200).json({ message: `Usuario con id ${pathUserId} eliminado`, deletedUser });
 }
+
+
+// Funciones Foto de perfil
+export const uploadProfilePicture = (req, res) => {
+  const pathUserId = parseInt(req.params.userId, 10);
+
+  if (isNaN(pathUserId)) {
+    return res.status(400).json({ message: "ID de usuario invalido. Debe ser un número." });
+  }
+
+  const dataUsers = readUsersFromFile();
+  const userIndex = dataUsers.findIndex((user) => user.id === pathUserId);
+
+  if (userIndex === -1) {
+    return res.status(404).json({ message: `No existe ningun usuario con el id: ${pathUserId}` });
+  }
+
+
+  // Crea una instancia de multer con el ID del usuario
+  const uploadMiddleware = upload(req.params.userId);
+
+  // Usa el middleware de multer para procesar la solicitud
+  uploadMiddleware.single('ProfilePicture')(req, res, (err) => {
+    if (err) {
+      return res.status(500).json({ message: 'Error al subir el archivo.' });
+    }
+
+    // Maneja el archivo subido
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
+    }
+
+    // Realiza cualquier otra acción necesaria, como guardar la información del archivo en la base de datos
+
+    res.status(200).json({
+      message: 'Foto de perfil subida con éxito',
+      file: file,
+      userId: req.params.userId
+    });
+  });
+};
