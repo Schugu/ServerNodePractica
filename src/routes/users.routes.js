@@ -1,3 +1,4 @@
+// Importas el Router, lo invocás, le agregas las rutas y luego lo exportas.
 import { Router } from 'express';
 import fs from 'node:fs';
 
